@@ -4,12 +4,39 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Google Fonts - Manrope */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: 'Manrope', var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: 'Manrope', var(--font-sans);
+
+  /* Celestial Noir - Custom Colors */
+  --color-cn-primary: #ba9eff;
+  --color-cn-primary-container: #ae8dff;
+  --color-cn-primary-dim: #8455ef;
+  --color-cn-secondary: #53ddfc;
+  --color-cn-secondary-container: #00687a;
+  --color-cn-tertiary: #ff6daf;
+  --color-cn-tertiary-container: #fa53a4;
+  --color-cn-surface: #0e0e14;
+  --color-cn-surface-container: #191921;
+  --color-cn-surface-container-low: #13131a;
+  --color-cn-surface-container-high: #1f1f27;
+  --color-cn-surface-container-highest: #25252e;
+  --color-cn-surface-variant: #25252e;
+  --color-cn-surface-bright: #2b2b35;
+  --color-cn-on-surface: #f6f2fc;
+  --color-cn-on-surface-variant: #acaab3;
+  --color-cn-outline: #76747d;
+  --color-cn-outline-variant: #48474f;
+  --color-cn-error: #ff6e84;
+  --color-cn-success: #53ddfc;
+
+  /* Sidebar Colors */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +45,15 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+
+  /* Chart Colors */
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+
+  /* Base Colors */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,6 +70,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Radius Scale */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +81,40 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Celestial Noir is always-dark, so :root IS dark */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0e0e14;
+  --foreground: #f6f2fc;
+  --card: #191921;
+  --card-foreground: #f6f2fc;
+  --popover: #1f1f27;
+  --popover-foreground: #f6f2fc;
+  --primary: #ba9eff;
+  --primary-foreground: #39008c;
+  --secondary: #53ddfc;
+  --secondary-foreground: #004b58;
+  --muted: #25252e;
+  --muted-foreground: #acaab3;
+  --accent: #1f1f27;
+  --accent-foreground: #f6f2fc;
+  --destructive: #ff6e84;
+  --border: rgba(72, 71, 79, 0.3);
+  --input: rgba(72, 71, 79, 0.4);
+  --ring: #ba9eff;
+  --chart-1: #ba9eff;
+  --chart-2: #53ddfc;
+  --chart-3: #ff6daf;
+  --chart-4: #ae8dff;
+  --chart-5: #8455ef;
+  --radius: 1.5rem;
+  --sidebar: #13131a;
+  --sidebar-foreground: #f6f2fc;
+  --sidebar-primary: #ba9eff;
+  --sidebar-primary-foreground: #f6f2fc;
+  --sidebar-accent: #1f1f27;
+  --sidebar-accent-foreground: #f6f2fc;
+  --sidebar-border: rgba(72, 71, 79, 0.2);
+  --sidebar-ring: #ba9eff;
 }
 
 @layer base {
@@ -122,9 +122,43 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Manrope', sans-serif;
   }
   html {
     @apply font-sans;
+    color-scheme: dark;
+  }
+}
+
+/* Glass effect utility */
+@layer utilities {
+  .glass {
+    background: rgba(25, 25, 33, 0.6);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+  .glass-light {
+    background: rgba(31, 31, 39, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .gradient-primary {
+    background: linear-gradient(135deg, #ba9eff 0%, #ae8dff 100%);
+  }
+  .gradient-primary-dim {
+    background: linear-gradient(135deg, #ba9eff 0%, #8455ef 100%);
+  }
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(186, 158, 255, 0.2);
+  }
+  .glow-secondary {
+    box-shadow: 0 0 20px rgba(83, 221, 252, 0.2);
+  }
+  .glow-tertiary {
+    box-shadow: 0 0 20px rgba(255, 109, 175, 0.2);
+  }
+  .shadow-celestial {
+    box-shadow: 0 20px 60px rgba(186, 158, 255, 0.06);
   }
 }

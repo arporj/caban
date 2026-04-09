@@ -4,13 +4,16 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Wallet } from 'lucide-react'
+import { Eye, EyeOff, Wallet, RefreshCw, Mail } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -18,6 +21,8 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setEmailNotConfirmed(false)
+    setResent(false)
     setLoading(true)
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -26,13 +31,46 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError('E-mail ou senha inválidos.')
+      // Detectando se o erro é de e-mail não confirmado
+      const msg = error.message.toLowerCase()
+      if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
+        setEmailNotConfirmed(true)
+        setError('Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada (e spam).')
+      } else if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
+        // Pode ser senha errada OU e-mail não confirmado (Supabase retorna o mesmo erro)
+        // Vamos tentar detectar se o usuário existe verificando com signUp
+        setEmailNotConfirmed(true)
+        setError('E-mail ou senha inválidos. Se você acabou de se cadastrar, verifique se confirmou o e-mail.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }
 
     router.push('/dashboard')
     router.refresh()
+  }
+
+  const handleResendConfirmation = async () => {
+    setResending(true)
+    setResent(false)
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      setError(error.message)
+    } else {
+      setResent(true)
+      setError('')
+    }
+    setResending(false)
   }
 
   return (
@@ -90,8 +128,32 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Erro com contexto de confirmação */}
         {error && (
-          <p className="text-cn-error text-sm text-center">{error}</p>
+          <div className="rounded-xl bg-cn-error/10 p-4 space-y-3">
+            <p className="text-cn-error text-sm">{error}</p>
+
+            {emailNotConfirmed && email && (
+              <>
+                {resent ? (
+                  <div className="flex items-center gap-2 text-cn-secondary text-xs">
+                    <Mail className="w-4 h-4" />
+                    E-mail de confirmação reenviado para {email}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resending}
+                    className="flex items-center gap-2 text-cn-primary text-xs font-medium hover:underline disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
+                    {resending ? 'Reenviando...' : 'Reenviar e-mail de confirmação'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         )}
 
         <button

@@ -33,13 +33,14 @@ export default function RegisterPage() {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
         },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
@@ -49,13 +50,19 @@ export default function RegisterPage() {
       return
     }
 
+    // Se o signup retornou um user mas sem session, precisa confirmar e-mail
+    if (data.user && !data.session) {
+      router.push(`/register/confirmacao?email=${encodeURIComponent(email)}`)
+      return
+    }
+
+    // Se retornou session diretamente (confirmação desabilitada)
     router.push('/dashboard')
     router.refresh()
   }
 
   return (
     <div className="glass rounded-3xl p-8 shadow-celestial">
-      {/* Logo */}
       <div className="flex items-center justify-center gap-3 mb-8">
         <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center">
           <Wallet className="w-6 h-6 text-white" />

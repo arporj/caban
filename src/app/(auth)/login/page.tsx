@@ -165,7 +165,16 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-sm text-cn-on-surface-variant text-center mt-6">
+      <div className="text-center mt-4">
+        <Link
+          href="/esqueci-senha"
+          className="text-xs text-cn-on-surface-variant hover:text-cn-primary transition-colors"
+        >
+          Esqueceu sua senha?
+        </Link>
+      </div>
+
+      <p className="text-sm text-cn-on-surface-variant text-center mt-4">
         Não tem uma conta?{' '}
         <Link href="/register" className="text-cn-primary hover:underline font-medium">
           Criar conta

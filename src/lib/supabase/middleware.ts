@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/register') &&
+    !request.nextUrl.pathname.startsWith('/esqueci-senha') &&
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
     const url = request.nextUrl.clone()
@@ -49,7 +50,8 @@ export async function updateSession(request: NextRequest) {
   if (
     user &&
     (request.nextUrl.pathname.startsWith('/login') ||
-      request.nextUrl.pathname.startsWith('/register'))
+      request.nextUrl.pathname.startsWith('/register') ||
+      request.nextUrl.pathname.startsWith('/esqueci-senha'))
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'

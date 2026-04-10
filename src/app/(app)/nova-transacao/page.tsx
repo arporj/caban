@@ -41,10 +41,10 @@ export default function NovaTransacaoPage() {
   const [description, setDescription] = useState('')
   const [notes, setNotes] = useState('')
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0])
-  const [accountId, setAccountId] = useState('')
+  const [originId, setOriginId] = useState('')
+  const [destinationId, setDestinationId] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [creditCardId, setCreditCardId] = useState('')
   const [statementMonth, setStatementMonth] = useState(0)
   const [statementYear, setStatementYear] = useState(0)
   const [recurrencePeriod, setRecurrencePeriod] = useState<'dia' | 'semana' | 'mes' | 'ano'>('mes')
@@ -70,18 +70,22 @@ export default function NovaTransacaoPage() {
   }, [])
 
   // Update statement month when credit card changes
+  const isOriginCC = originId.startsWith('cc_')
+  const isDestinationCC = destinationId.startsWith('cc_')
+  const activeCreditCardId = isOriginCC ? originId.replace('cc_', '') : (isDestinationCC ? destinationId.replace('cc_', '') : '')
+  const hasCreditCard = isOriginCC || isDestinationCC
+
   useEffect(() => {
-    if (creditCardId) {
-      const card = creditCards.find(c => c.id === creditCardId)
+    if (activeCreditCardId) {
+      const card = creditCards.find(c => c.id === activeCreditCardId)
       if (card) {
         const { month, year } = getNextStatementMonth(card.closing_day)
         setStatementMonth(month)
         setStatementYear(year)
       }
     }
-  }, [creditCardId, creditCards])
+  }, [activeCreditCardId, creditCards])
 
-  const isCreditCard = !!creditCardId
   const parentCategories = categories.filter(c => !c.parent_id)
   const filteredCategories = parentCategories.filter(c =>
     c.type === 'ambos' || c.type === type
@@ -124,8 +128,9 @@ export default function NovaTransacaoPage() {
 
     const numericAmount = getNumericAmount()
     if (numericAmount <= 0) { setError('Informe um valor válido'); return }
-    if (!isCreditCard && !accountId) { setError('Selecione uma conta'); return }
-    if (isCreditCard && !creditCardId) { setError('Selecione um cartão'); return }
+    if (!originId) { setError('Selecione a conta ou cartão principal'); return }
+    if (type === 'transferencia' && !destinationId) { setError('Selecione a conta ou cartão de destino'); return }
+    if (type === 'transferencia' && originId === destinationId) { setError('Origem e destino não podem ser iguais'); return }
 
     setSaving(true)
 
@@ -133,20 +138,24 @@ export default function NovaTransacaoPage() {
       const data: TransactionFormData = {
         type,
         amount: numericAmount,
-        description: description || 'Sem descrição',
+        description: description || (type === 'transferencia' ? 'Transferência Executada' : 'Sem descrição'),
         notes: notes || undefined,
         transaction_date: transactionDate,
-        account_id: accountId || accounts[0]?.id || '',
+        account_id: !isOriginCC ? originId.replace('acc_', '') : '',
         category_id: categoryId || undefined,
         tag_ids: selectedTags.length > 0 ? selectedTags : undefined,
-        recurrence_mode: recurrenceMode,
+        recurrence_mode: type === 'transferencia' ? 'unica' : recurrenceMode,
         recurrence_period: recurrenceMode !== 'unica' ? recurrencePeriod : undefined,
         recurrence_interval: 1,
         recurrence_count: recurrenceMode !== 'unica' ? recurrenceCount : undefined,
         installment_value_mode: recurrenceMode === 'parcelada' ? installmentValueMode : undefined,
-        credit_card_id: isCreditCard ? creditCardId : undefined,
-        statement_month: isCreditCard ? statementMonth : undefined,
-        statement_year: isCreditCard ? statementYear : undefined,
+        credit_card_id: isOriginCC ? originId.replace('cc_', '') : undefined,
+        statement_month: isOriginCC ? statementMonth : undefined,
+        statement_year: isOriginCC ? statementYear : undefined,
+        destination_account_id: (type === 'transferencia' && !isDestinationCC) ? destinationId.replace('acc_', '') : undefined,
+        destination_credit_card_id: (type === 'transferencia' && isDestinationCC) ? destinationId.replace('cc_', '') : undefined,
+        destination_statement_month: (type === 'transferencia' && isDestinationCC) ? statementMonth : undefined,
+        destination_statement_year: (type === 'transferencia' && isDestinationCC) ? statementYear : undefined,
       }
 
       await createTransaction(data)
@@ -234,24 +243,26 @@ export default function NovaTransacaoPage() {
               className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
-              Repetição
-            </label>
-            <select
-              value={recurrenceMode}
-              onChange={(e) => setRecurrenceMode(e.target.value as RecurrenceMode)}
-              className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
-            >
-              <option value="unica">Única</option>
-              <option value="fixa">Fixa</option>
-              <option value="parcelada">Parcelada</option>
-            </select>
-          </div>
+          {type !== 'transferencia' && (
+            <div>
+              <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
+                Repetição
+              </label>
+              <select
+                value={recurrenceMode}
+                onChange={(e) => setRecurrenceMode(e.target.value as RecurrenceMode)}
+                className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
+              >
+                <option value="unica">Única</option>
+                <option value="fixa">Fixa</option>
+                <option value="parcelada">Parcelada</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Recurrence Options */}
-        {recurrenceMode !== 'unica' && (
+        {type !== 'transferencia' && recurrenceMode !== 'unica' && (
           <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-cn-surface-container/60">
             <div>
               <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
@@ -309,56 +320,97 @@ export default function NovaTransacaoPage() {
         )}
 
         {/* Description */}
-        <div>
-          <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
-            Descrição
-          </label>
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex: Supermercado"
-            className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface placeholder:text-cn-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
-          />
-        </div>
-
-        {/* Destination: Account OR Credit Card */}
-        <div className="grid grid-cols-2 gap-4">
+        {type !== 'transferencia' && (
           <div>
             <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
-              Conta {isCreditCard ? '' : '*'}
+              Descrição
             </label>
-            <select
-              value={isCreditCard ? '' : accountId}
-              onChange={(e) => { setAccountId(e.target.value); setCreditCardId('') }}
-              disabled={isCreditCard}
-              className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm disabled:opacity-40"
-            >
-              <option value="">Selecione...</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex: Supermercado"
+              className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface placeholder:text-cn-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
+            />
           </div>
+        )}
+        
+        {type === 'transferencia' && (
           <div>
             <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
-              Cartão de Crédito
+              Descrição (Opcional)
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex: Pagamento do Cartão"
+              className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface placeholder:text-cn-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
+            />
+          </div>
+        )}
+
+        {/* Unified Origin/Destination Selectors */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className={type !== 'transferencia' ? 'col-span-2' : ''}>
+            <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
+              {type === 'transferencia' ? 'Conta (Origem) *' : 'Conta / Cartão de Crédito *'}
             </label>
             <select
-              value={creditCardId}
-              onChange={(e) => { setCreditCardId(e.target.value); if (e.target.value) setAccountId('') }}
+              value={originId}
+              onChange={(e) => setOriginId(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
             >
-              <option value="">Nenhum</option>
-              {creditCards.map(cc => (
-                <option key={cc.id} value={cc.id}>{cc.name} ({cc.brand})</option>
-              ))}
+              <option value="">Selecione...</option>
+              {accounts.length > 0 && (
+                <optgroup label="Contas">
+                  {accounts.map(a => (
+                    <option key={`opt_acc_${a.id}`} value={`acc_${a.id}`}>{a.name}</option>
+                  ))}
+                </optgroup>
+              )}
+              {creditCards.length > 0 && (
+                <optgroup label="Cartões de Crédito">
+                  {creditCards.map(cc => (
+                    <option key={`opt_cc_${cc.id}`} value={`cc_${cc.id}`}>{cc.name} ({cc.brand})</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
+          
+          {type === 'transferencia' && (
+            <div>
+              <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
+                Conta (Destino) *
+              </label>
+              <select
+                value={destinationId}
+                onChange={(e) => setDestinationId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
+              >
+                <option value="">Selecione...</option>
+                {accounts.length > 0 && (
+                  <optgroup label="Contas">
+                    {accounts.map(a => (
+                      <option key={`opt_dest_acc_${a.id}`} value={`acc_${a.id}`}>{a.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+                {creditCards.length > 0 && (
+                  <optgroup label="Cartões de Crédito">
+                    {creditCards.map(cc => (
+                      <option key={`opt_dest_cc_${cc.id}`} value={`cc_${cc.id}`}>{cc.name} ({cc.brand})</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </div>
+          )}
         </div>
 
-        {/* Statement month (only for credit card) */}
-        {isCreditCard && (
+        {/* Statement month */}
+        {hasCreditCard && (
           <div className="p-4 rounded-2xl bg-cn-surface-container/60">
             <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
               Lançar na fatura de *
@@ -382,29 +434,31 @@ export default function NovaTransacaoPage() {
         )}
 
         {/* Category */}
-        <div>
-          <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
-            Categoria
-          </label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
-          >
-            <option value="">Sem categoria</option>
-            {filteredCategories.map(cat => {
-              const subs = categories.filter(c => c.parent_id === cat.id)
-              return (
-                <optgroup key={cat.id} label={cat.name}>
-                  <option value={cat.id}>{cat.name} (geral)</option>
-                  {subs.map(sub => (
-                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                  ))}
-                </optgroup>
-              )
-            })}
-          </select>
-        </div>
+        {type !== 'transferencia' && (
+          <div>
+            <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">
+              Categoria
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
+            >
+              <option value="">Sem categoria</option>
+              {filteredCategories.map(cat => {
+                const subs = categories.filter(c => c.parent_id === cat.id)
+                return (
+                  <optgroup key={cat.id} label={cat.name}>
+                    <option value={cat.id}>{cat.name} (geral)</option>
+                    {subs.map(sub => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </optgroup>
+                )
+              })}
+            </select>
+          </div>
+        )}
 
         {/* Notes */}
         <div>

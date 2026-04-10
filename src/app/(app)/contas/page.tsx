@@ -40,6 +40,13 @@ export default function ContasPage() {
   const [color, setColor] = useState('#ba9eff')
   const [initialBalance, setInitialBalance] = useState('')
 
+  const handleBalanceChange = (value: string) => {
+    const digits = value.replace(/\D/g, '')
+    if (!digits) { setInitialBalance(''); return }
+    const num = parseInt(digits) / 100
+    setInitialBalance(num.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
+  }
+
   useEffect(() => {
     loadAccounts()
   }, [])
@@ -68,7 +75,7 @@ export default function ContasPage() {
     setName(account.name)
     setType(account.type as AccountFormData['type'])
     setColor(account.color)
-    setInitialBalance(String(account.initial_balance))
+    setInitialBalance(account.initial_balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
     setEditingId(account.id)
     setShowForm(true)
   }
@@ -77,12 +84,13 @@ export default function ContasPage() {
     e.preventDefault()
     setSaving(true)
     try {
+      const parsedBalance = parseFloat(initialBalance.replace(/\./g, '').replace(',', '.')) || 0
       const formData: AccountFormData = {
         name,
         type,
         color,
         icon: 'wallet',
-        initial_balance: parseFloat(initialBalance || '0'),
+        initial_balance: parsedBalance,
       }
 
       if (editingId) {
@@ -172,10 +180,9 @@ export default function ContasPage() {
                 Saldo Inicial (R$)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={initialBalance}
-                onChange={(e) => setInitialBalance(e.target.value)}
+                onChange={(e) => handleBalanceChange(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface placeholder:text-cn-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
                 placeholder="0,00"
               />

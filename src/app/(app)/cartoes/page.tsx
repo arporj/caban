@@ -52,6 +52,13 @@ export default function CartoesPage() {
   const [creditLimit, setCreditLimit] = useState('')
   const [paymentAccountId, setPaymentAccountId] = useState<string>('')
 
+  const handleLimitChange = (value: string) => {
+    const digits = value.replace(/\D/g, '')
+    if (!digits) { setCreditLimit(''); return }
+    const num = parseInt(digits) / 100
+    setCreditLimit(num.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
+  }
+
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
@@ -73,7 +80,7 @@ export default function CartoesPage() {
   function startEdit(card: CardType) {
     setName(card.name); setBrand(card.brand as CreditCardFormData['brand'])
     setColor(card.color); setClosingDay(String(card.closing_day))
-    setDueDay(String(card.due_day)); setCreditLimit(String(card.credit_limit))
+    setDueDay(String(card.due_day)); setCreditLimit(card.credit_limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
     setPaymentAccountId(card.payment_account_id ?? '')
     setEditingId(card.id); setShowForm(true)
   }
@@ -82,11 +89,12 @@ export default function CartoesPage() {
     e.preventDefault()
     setSaving(true)
     try {
+      const parsedLimit = parseFloat(creditLimit.replace(/\./g, '').replace(',', '.')) || 0
       const formData: CreditCardFormData = {
         name, brand, color,
         closing_day: parseInt(closingDay),
         due_day: parseInt(dueDay),
-        credit_limit: parseFloat(creditLimit || '0'),
+        credit_limit: parsedLimit,
         payment_account_id: paymentAccountId || null,
       }
       if (editingId) { await updateCreditCard(editingId, formData) }
@@ -154,7 +162,7 @@ export default function CartoesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-cn-on-surface-variant uppercase tracking-wider mb-2">Limite (R$)</label>
-                <input type="number" step="0.01" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)}
+                <input type="text" value={creditLimit} onChange={(e) => handleLimitChange(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-cn-surface-container-low text-cn-on-surface placeholder:text-cn-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-cn-primary/40 text-sm"
                   placeholder="0,00" />
               </div>

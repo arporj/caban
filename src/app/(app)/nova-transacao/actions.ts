@@ -24,6 +24,11 @@ export type TransactionFormData = {
   credit_card_id?: string
   statement_month?: number
   statement_year?: number
+  // Transfers
+  destination_account_id?: string
+  destination_credit_card_id?: string
+  destination_statement_month?: number
+  destination_statement_year?: number
 }
 
 export async function getFormData() {
@@ -41,6 +46,8 @@ export async function getFormData() {
     supabase.schema('caban').from('credit_cards').select('id, name, brand, color, closing_day, due_day')
       .eq('user_id', user.id).eq('is_active', true).order('name'),
   ])
+
+  if (categories.error) console.error('Erro get categories:', categories.error)
 
   return {
     accounts: accounts.data ?? [],
@@ -187,6 +194,7 @@ export async function createTransaction(formData: TransactionFormData) {
           recurrence_period: formData.recurrence_period || null,
           recurrence_interval: formData.recurrence_interval || null,
           recurrence_count: formData.recurrence_count || null,
+          destination_account_id: formData.destination_account_id || null,
         })
         .select('id')
         .single()
@@ -273,6 +281,8 @@ export async function createTransaction(formData: TransactionFormData) {
           recurrence_period: formData.recurrence_period || null,
           recurrence_interval: formData.recurrence_interval ?? 1,
           recurrence_count: formData.recurrence_count || null,
+          destination_account_id: formData.destination_account_id || null,
+          destination_credit_card_id: formData.destination_credit_card_id || null,
         })
         .select('id')
         .single()
@@ -311,7 +321,7 @@ export async function getTransactions(filters?: {
       *,
       account:accounts(id, name, color, icon),
       category:categories(id, name, icon, color),
-      tags:transaction_tags(tag:tags(id, name, color))
+      tags:transaction_tags(tag:tags(*))
     `)
     .eq('user_id', user.id)
     .order('transaction_date', { ascending: false })
@@ -326,7 +336,10 @@ export async function getTransactions(filters?: {
   if (filters?.search) query = query.ilike('description', `%${filters.search}%`)
 
   const { data, error } = await query
-  if (error) throw error
+  if (error) {
+    console.error('getTransactions ERROR:', error)
+    return []
+  }
   return data ?? []
 }
 
